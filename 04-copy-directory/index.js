@@ -1,40 +1,47 @@
 const path = require('path')
 
-const { readdir, writeFile, readFile, unlink } = require('fs')
+const { readdir, writeFile, readFile } = require('fs')
 
-const { mkdir } = require('fs/promises');
+const { mkdir, rm } = require('fs/promises');
 
-function cleanFolder(pathFolder) {
-  readdir(pathFolder, (error, files) => {
-    if (error) return console.error(error.message);
+const options = { withFileTypes: true };
 
-    files.forEach(file => unlink(path.join(pathFolder, file), error => {
-      if (error) return console.error(error.message);
-    }));
 
-    copyFolder();
-  })
-}
-
-function copyFolder() {
-  readdir(path.join(__dirname, 'files'), (error, files) => {
+function copyFolder(pathDist, pathSrc) {
+  readdir(pathSrc, options, (error, files) => {
     if (error) return console.error(error.message);
 
     files.forEach(file => {
-      readFile(path.join(__dirname, 'files', `${file}`), (error, data) => {
-        if (error) return console.error(error.message);
 
-        writeFile(path.join(__dirname, 'files-copy', `${file}`), data, error => {
+      if(file.isFile()) {
+        readFile(path.join(pathSrc, `${file.name}`), (error, data) => {
           if (error) return console.error(error.message);
-
-          console.log(`file ${file} copied`)
+  
+          writeFile(path.join(pathDist, `${file.name}`), data, error => {
+            if (error) return console.error(error.message);
+  
+            console.log(`file ${file.name} copied`)
+          })
         })
-      })
+      } else {
+        createFolder(path.join(pathDist, `${file.name}`), path.join(pathSrc, `${file.name}`))
+      }
+      
     })
   })
 }
 
-mkdir(path.join(__dirname, 'files-copy'), { recursive: true })
-  .then(cleanFolder(path.join(__dirname, 'files-copy')))
-  .catch(error => console.error(error.message))
+function createFolder(pathDist, pathSrc) {
+  mkdir(pathDist, { recursive: true })
+    .then(copyFolder(pathDist, pathSrc))
+    .catch(error => console.error(error.message))
 
+}
+
+rm(path.join(__dirname, 'files-copy'), { recursive: true, force: true })
+  .then(() => {
+
+    createFolder(path.join(__dirname, 'files-copy'), path.join(__dirname, 'files'))
+    
+  })
+  .catch(error => console.error(error.message))
