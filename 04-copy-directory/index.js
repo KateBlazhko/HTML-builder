@@ -1,6 +1,6 @@
 const path = require('path')
 
-const { readdir, writeFile, readFile } = require('fs')
+const { readdir, writeFile, readFile, createReadStream, createWriteStream } = require('fs')
 
 const { mkdir, rm } = require('fs/promises');
 
@@ -14,15 +14,20 @@ function copyFolder(pathDist, pathSrc) {
     files.forEach(file => {
 
       if(file.isFile()) {
-        readFile(path.join(pathSrc, `${file.name}`), (error, data) => {
-          if (error) return console.error(error.message);
-  
-          writeFile(path.join(pathDist, `${file.name}`), data, error => {
-            if (error) return console.error(error.message);
-  
-            console.log(`file ${file.name} copied`)
-          })
+        const readStream = createReadStream(path.join(pathSrc, `${file.name}`))
+
+        const writeStream = createWriteStream(path.join(pathDist, `${file.name}`))
+
+        readStream.pipe(writeStream)
+
+        readStream.on('error', error => console.error(error.message))
+
+        writeStream.on('close', () => {
+          console.log(`file ${file.name} copied`)
         })
+
+        writeStream.on('error', error => console.error(error.message))
+        
       } else {
         createFolder(path.join(pathDist, `${file.name}`), path.join(pathSrc, `${file.name}`))
       }
