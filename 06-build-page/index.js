@@ -80,26 +80,30 @@ async function readHTMLFiles(listHtmlFiles, templateHtml) {
 }
 
 async function createIndexHtml() {
-  const listHtmlFiles = await readComponents(path.join(__dirname, 'components'));
-  const templateHtml = await readTemplate();
-  const indexHtml = await readHTMLFiles(listHtmlFiles, templateHtml);
+  try {
+    const listHtmlFiles = await readComponents(path.join(__dirname, 'components'));
+    const templateHtml = await readTemplate();
+    const indexHtml = await readHTMLFiles(listHtmlFiles, templateHtml);
+    
+    await new Promise ((resolve, reject) => {
+      const writeStream = createWriteStream(path.join(__dirname, 'project-dist', 'index.html'));
   
-  return new Promise ((resolve, reject) => {
-    const writeStream = createWriteStream(path.join(__dirname, 'project-dist', 'index.html'));
-
-    writeStream.write(indexHtml, error => {
-      if (error) return console.error(error.message);
-      writeStream.end();
+      writeStream.write(indexHtml, () => {
+        writeStream.end();
+      });
+  
+      writeStream.on('finish', () => {
+        console.log('Your index.html is ready!');
+        resolve();
+      });
+  
+      writeStream.on('error', reject);
+  
     });
-
-    writeStream.on('finish', () => {
-      console.log('Your index.html is ready!');
-      resolve();
-    });
-
-    writeStream.on('error', reject);
-
-  });
+  } catch (error) {
+    console.error(error.message);
+  }
+  
 }
 
 //Create 'style.css'
@@ -128,20 +132,24 @@ async function createStyleCss() {
       }));
     });
 
-    Promise.all(promisesReading)
-      .then(styles  => {
-        const writeStream = createWriteStream(path.join(__dirname, 'project-dist', 'style.css'),
-          'utf-8');
-        writeStream.write(styles.join('\n'), error => {
-          if (error) return console.error(error.message);
-          writeStream.emit('end');
-        });
-        writeStream.on('end', () => {
-          console.log('Your style.css is ready!');
-        });
-        writeStream.on('error', error => console.error(error.message));
-      })
-      .catch(error => console.error(error.message));
+    const styles = await Promise.all(promisesReading);
+
+    const writeStream = createWriteStream(path.join(__dirname, 'project-dist', 'style.css'));
+
+    writeStream.write(styles.join('\n'), error => {
+      if (error) throw error;
+
+      writeStream.emit('end');
+    });
+
+    writeStream.on('end', () => {
+      console.log('Your style.css is ready!');
+    });
+
+    writeStream.on('error', error => {
+      if (error) throw error;
+    });
+
 
   } catch (error) {
     console.error(error.message);
@@ -199,6 +207,8 @@ createFolder(path.join(__dirname, 'project-dist'))
       createIndexHtml();
       createStyleCss();
       createAssets();
+
+      console.log('Your project is ready')
     }
   })
   .catch(error => console.error(error.message));
