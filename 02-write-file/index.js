@@ -29,17 +29,21 @@ fs.access(path.join(__dirname, 'text.txt'), error => {
 
   console.log('Hello, please enter text for writtting');
   rl.on('line', data => {
-    writeStream.write(data);
     const isExit = checkData(data);
-    return isExit ? writeStream.emit('end') : console.log('Add text for writting');
+
+    if (isExit) return writeStream.emit('end')
+
+    writeStream.write(data + '\n');
+    return stdout.write('Add text for writting\n');
   });
   
   rl.on('SIGINT', () => {
+    stdout.write('exit\n')
     writeStream.emit('end'); 
   });
   
   writeStream.on('end', () => {
-    stdout.write('\nYour file is ready!\n');
+    stdout.write('Your file is ready!\n');
     exit();
   });
 
