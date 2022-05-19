@@ -27,18 +27,18 @@ fs.access(path.join(__dirname, 'text.txt'), error => {
     console.log('file "text.txt" exist');
   }
 
-  console.log('Hello, please enter text for writtting');
+  console.log('Hello, please type some text');
   rl.on('line', data => {
-    const isExit = checkData(data);
+    const isExit = checkData(data.trim());
 
     if (isExit) return writeStream.emit('end')
 
     writeStream.write(data + '\n');
-    return stdout.write('Add text for writting\n');
+    return stdout.write('Would you like to continue typing?\n');
   });
   
   rl.on('SIGINT', () => {
-    stdout.write('exit\n')
+    stdout.write('\n')
     writeStream.emit('end'); 
   });
   

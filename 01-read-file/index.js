@@ -8,7 +8,7 @@ readStream.on('data', chunk => fullData += chunk);
 readStream.on('start', (message) => console.log(message));
 readStream.on('end', () => {
   console.log(fullData);
-  console.log('End reading');
+  console.log('End reading!');
 });
 readStream.on('error', error => console.error(error.message));
 

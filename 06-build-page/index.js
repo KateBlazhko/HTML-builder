@@ -24,8 +24,7 @@ async function readComponents(pathComponents) {
 
   } catch (error) {
     console.error(error.message);
-  }
-  
+  } 
 }
 
 async function readTemplate() {
@@ -38,8 +37,6 @@ async function readTemplate() {
   } catch (error) {
     console.error(error.message);
   }
-
-  
 }
 
 async function readHTMLFiles(listHtmlFiles, templateHtml) {
@@ -75,8 +72,7 @@ async function readHTMLFiles(listHtmlFiles, templateHtml) {
     
   } catch (error) {
     console.error(error.message);
-  }
-  
+  }  
 }
 
 async function createIndexHtml() {
@@ -103,7 +99,6 @@ async function createIndexHtml() {
   } catch (error) {
     console.error(error.message);
   }
-  
 }
 
 //Create 'style.css'
@@ -117,10 +112,9 @@ async function createStyleCss() {
       }
       return false;
     });
-    const promisesReading = [];
-      
-    listCSSFiles.forEach(file =>{
-      promisesReading.push(new Promise((resolve, reject) => {
+
+    const promisesReading = listCSSFiles.map(file => {
+      return new Promise((resolve, reject) => {
         const readStream = createReadStream(path.join(__dirname, 'styles', `${file.name}`));
         const style = [];
   
@@ -129,9 +123,9 @@ async function createStyleCss() {
           resolve(...style);
         });
         readStream.on('error', reject);
-      }));
+      });
     });
-
+    
     const styles = await Promise.all(promisesReading);
 
     const writeStream = createWriteStream(path.join(__dirname, 'project-dist', 'style.css'));
@@ -149,7 +143,6 @@ async function createStyleCss() {
     writeStream.on('error', error => {
       if (error) throw error;
     });
-
 
   } catch (error) {
     console.error(error.message);
@@ -170,7 +163,6 @@ async function createAssets() {
   } catch (error) {
     console.error(error.message);
   }
- 
 }
 
 async function copyFolder(pathDist, pathSrc) {
@@ -202,13 +194,11 @@ async function copyFolder(pathDist, pathSrc) {
 }
 
 createFolder(path.join(__dirname, 'project-dist'))
-  .then(async (isCreate) => {
+  .then((isCreate) => {
     if (isCreate) {
       createIndexHtml();
       createStyleCss();
       createAssets();
-
-      console.log('Your project is ready')
     }
   })
   .catch(error => console.error(error.message));
