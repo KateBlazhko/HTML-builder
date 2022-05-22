@@ -1,11 +1,23 @@
+//Hello! Please
 const fs = require('fs');
 const readline = require('readline');
 const path = require('path');
-const { stdin, stdout, exit } = require('process');
+const { stdin, stdout, exit, platform } = require('process');
 
 const rl = readline.createInterface(stdin, stdout);
 
 const writeStream = fs.createWriteStream(path.join(__dirname, 'text.txt'), 'utf-8');
+
+const message = 
+`\nВнимание! В Git Bash для Windows версий 2.35.1-2.35.4 присутствует баг, 
+          при котором некорректно обрабатывается событие при нажатии сочетания клавиш Ctrl+C. 
+          В связи с этим в задаче может не показываться прощальное сообщение 
+          при нажатии данного сочетания клавиш. 
+          Обновите Git Bash или попробуйте запускать скрипт в другом терминале\n`
+
+if (platform.match(/win/i)) {
+  console.log(message)
+}
 
 function checkData(data) {
   const stringData = data.toString();
@@ -24,7 +36,7 @@ fs.access(path.join(__dirname, 'text.txt'), error => {
     );
     console.log('file "text.txt" create');
   } else {
-    console.log('file "text.txt" exist');
+    console.log('file "text.txt" exist, it will be overwrited');
   }
 
   console.log('Hello, please type some text');
