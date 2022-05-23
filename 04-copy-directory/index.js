@@ -2,6 +2,15 @@ const path = require('path');
 const { readdir, createReadStream, createWriteStream } = require('fs');
 const { mkdir, rm } = require('fs/promises');
 
+const message = 
+`\nВнимание! В Windows присутствует баг, 
+          при котором некорректно обрабатывает fs.rm() при включенном Live Server'e. 
+          В связи с этим прошу убедиться, что LS выключен\n`
+
+if (process.platform.match(/win/i)) {
+  console.log(message)
+}
+
 function copyFolder(pathDist, pathSrc) {
   readdir(pathSrc, { withFileTypes: true }, (error, files) => {
     if (error) return console.error(error.message);
@@ -38,7 +47,7 @@ function createFolder(pathDist, pathSrc) {
 
 }
 
-rm(path.join(__dirname, 'files-copy'), { recursive: true, force: true })
+rm(path.join(__dirname, 'files-copy'), { recursive: true, force: true , maxRetries: 100})
   .then(() => {
 
     createFolder(path.join(__dirname, 'files-copy'), path.join(__dirname, 'files'));
