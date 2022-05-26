@@ -45,17 +45,18 @@ async function readHTMLFiles(listHtmlFiles, templateHtml) {
     if (listHtmlFiles.length === 0) {
       return templateHtml;
     } 
-  
-    const regExpName = /(\w+).(\w+)/i;
-    const file = listHtmlFiles[0];
-    const nameFile = file.name.replace(regExpName, '$1');
+
+    const file = listHtmlFiles[0].name;
+    const nameFile = path.basename(`${file}`, path.extname(`${file}`))
+
     const regExp = new RegExp(`(\\s*){{${nameFile}}}`);
-    const spaces = templateHtml.match(regExp)[1];
-    
     const result = await new Promise((resolve, reject) => {
-      const readStream = createReadStream(path.join(__dirname, 'components', file.name));
+
+      const readStream = createReadStream(path.join(__dirname, 'components', file));
       const rl = readline.createInterface(readStream);
-  
+
+      const spaces = (templateHtml.match(regExp)) ? templateHtml.match(regExp)[1] : '';
+
       let data = '';
       rl.on('line', chunk => data += spaces + chunk);
   
