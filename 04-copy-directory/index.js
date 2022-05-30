@@ -1,6 +1,6 @@
 const path = require('path');
-const { readdir, createReadStream, createWriteStream } = require('fs');
-const { mkdir, rm } = require('fs/promises');
+const { createReadStream, createWriteStream } = require('fs');
+const { mkdir, rm, readdir } = require('fs/promises');
 
 const message = 
 `\nВнимание! В Windows присутствует баг, 
@@ -11,46 +11,53 @@ if (process.platform.match(/win/i)) {
   console.log(message)
 }
 
-function copyFolder(pathDist, pathSrc) {
-  readdir(pathSrc, { withFileTypes: true }, (error, files) => {
-    if (error) return console.error(error.message);
+async function createFolder(pathFolder) {
+  try {
+    await mkdir(pathFolder, { recursive: true });
+  } catch (error) {
+    console.log(error.message);
+  }
+}
+
+async function copyFolder(pathDist, pathSrc) {
+  try {
+    await createFolder(pathDist);
+
+    const files = await readdir(pathSrc, { withFileTypes: true});
 
     files.forEach(file => {
 
       if(file.isFile()) {
         const readStream = createReadStream(path.join(pathSrc, `${file.name}`));
-
         const writeStream = createWriteStream(path.join(pathDist, `${file.name}`));
 
         readStream.pipe(writeStream);
 
         readStream.on('error', error => console.error(error.message));
-
-        writeStream.on('close', () => {
-          console.log(`file ${file.name} copied`);
-        });
-
         writeStream.on('error', error => console.error(error.message));
         
       } else {
-        createFolder(path.join(pathDist, `${file.name}`), path.join(pathSrc, `${file.name}`));
+        copyFolder(path.join(pathDist, `${file.name}`), path.join(pathSrc, `${file.name}`),);
       }
       
     });
-  });
+
+  } catch (error) {
+    console.error(error.message);
+  } 
 }
 
-function createFolder(pathDist, pathSrc) {
-  mkdir(pathDist, { recursive: true })
-    .then(copyFolder(pathDist, pathSrc))
-    .catch(error => console.error(error.message));
+(async () => {
+  try {
+    const pathDist = path.join(__dirname, 'files-copy');
+    const pathSrc = path.join(__dirname, 'files');
 
-}
+    await rm(pathDist, { recursive: true, force: true });
+    await copyFolder(pathDist, pathSrc);
 
-rm(path.join(__dirname, 'files-copy'), { recursive: true, force: true , maxRetries: 100})
-  .then(() => {
+    return console.log('Your folder is copied');
 
-    createFolder(path.join(__dirname, 'files-copy'), path.join(__dirname, 'files'));
-    
-  })
-  .catch(error => console.error(error.message));
+  } catch (error) {
+    console.error(error.message);
+  }
+})()

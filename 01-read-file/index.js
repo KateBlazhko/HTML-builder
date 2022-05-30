@@ -1,15 +1,19 @@
 const fs = require('fs');
-const path = require('path');
+const { join } = require('path');
+const { stdout } = require('process');
 
-const readStream = fs.createReadStream(path.join(__dirname, 'text.txt'));
+const pathToFile = join(__dirname, 'text.txt');
+const readStream = fs.createReadStream(pathToFile, 'utf8');
 
-let fullData = '';
-readStream.on('data', chunk => fullData += chunk);
 readStream.on('start', (message) => console.log(message));
-readStream.on('end', () => {
-  console.log(fullData);
-  console.log('End reading!');
-});
+readStream.emit('start', 'Start reading!');
+
+readStream.on('data', chunk => stdout.write(chunk));
+
+readStream.on('end', () => console.log('End reading!'));
+
 readStream.on('error', error => console.error(error.message));
 
-readStream.emit('start', 'Start reading!');
+// Реализация через pipe:
+// readStream.pipe(stdout)
+// readStream.on('error', error => console.error(error.message));

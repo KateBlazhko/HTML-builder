@@ -1,6 +1,8 @@
 const path = require('path');
-const { readdir, readFile, mkdir, rm } = require('fs/promises');
+const { readdir, readFile, mkdir, rm, writeFile } = require('fs/promises');
 const { createReadStream, createWriteStream } = require('fs');
+const { pipeline } = require('stream/promises');
+const { Transform } = require('stream')
 const readline = require('readline');
 
 //Create any folder
@@ -105,7 +107,9 @@ async function createIndexHtml() {
 //Create 'style.css'
 async function createStyleCss() {
   try {
-    const files = await readdir(path.join(__dirname, 'styles'), { withFileTypes: true });
+    const pathSrc = path.join(__dirname, 'styles');
+    const pathDist = path.join(__dirname, 'project-dist', 'style.css');
+    const files = await readdir(pathSrc, { withFileTypes: true });
      
     const listCSSFiles = files.filter(file => {
       if (file.isFile() && file.name.match(/.css/i)) {
@@ -116,7 +120,7 @@ async function createStyleCss() {
 
     const promisesReading = listCSSFiles.map(file => {
       return new Promise((resolve, reject) => {
-        const readStream = createReadStream(path.join(__dirname, 'styles', `${file.name}`));
+        const readStream = createReadStream(path.join(pathSrc, `${file.name}`));
         const style = [];
   
         readStream.on('data', data => style.push(data));
@@ -128,22 +132,10 @@ async function createStyleCss() {
     });
     
     const styles = await Promise.all(promisesReading);
+    
+    await writeFile(pathDist, styles.join('\n'));
 
-    const writeStream = createWriteStream(path.join(__dirname, 'project-dist', 'style.css'));
-
-    writeStream.write(styles.join('\n'), error => {
-      if (error) throw error;
-
-      writeStream.emit('end');
-    });
-
-    writeStream.on('end', () => {
-      console.log('Your style.css is ready!');
-    });
-
-    writeStream.on('error', error => {
-      if (error) throw error;
-    });
+    console.log('Your style.css is ready!');
 
   } catch (error) {
     console.error(error.message);

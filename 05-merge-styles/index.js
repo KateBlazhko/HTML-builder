@@ -1,46 +1,34 @@
-const path = require('path');
-const { readdir, createReadStream, createWriteStream} = require('fs');
+const { join } = require('path');
+const { createReadStream, createWriteStream} = require('fs');
+const { readdir } = require('fs/promises');
+const { pipeline } = require('stream/promises');
 
-readdir(path.join(__dirname, 'styles'),
-  { withFileTypes: true },
-  (error, files) => {
-    if (error) return console.error(error.message);
-    
+const pathDist = join(__dirname, 'project-dist', 'bundle.css');
+const pathSrc = join(__dirname, 'styles');
+
+async function createStyleCss() {
+  try {
+    const files = await readdir(pathSrc, { withFileTypes: true });
+     
     const listCSSFiles = files.filter(file => {
-      if (file.isFile && file.name.match(/.css/i)) {
+      if (file.isFile() && file.name.match(/.css/i)) {
         return true;
       }
       return false;
     });
 
-    const promisesReading = [];
-    
-    listCSSFiles.forEach(file =>{
-      promisesReading.push(new Promise((resolve, reject) => {
-        const readStream = createReadStream(path.join(__dirname, 'styles', `${file.name}`), 'utf-8');
-        const style = [];
-  
-        readStream.on('data', data => style.push(data));
-        readStream.on('end', () => {
-          resolve(...style);
-        });
-        readStream.on('error', reject);
-      }));
-    });
+    for (const file of listCSSFiles) {
+      const readStream = createReadStream(join(pathSrc, file.name));
+      const writeStream = createWriteStream(pathDist, { flags: 'a' });
 
-    Promise.all(promisesReading)
-      .then(styles  => {
-        const writeStream = createWriteStream(path.join(__dirname, 'project-dist', 'bundle.css'),
-          'utf-8');
-        writeStream.write(styles.join('\n'), error => {
-          if (error) return console.error(error.message);
-          writeStream.emit('end');
-        });
-        writeStream.on('end', () => {
-          console.log('Your styles are ready!');
-        });
-        writeStream.on('error', error => console.error(error.message));
-      })
-      .catch(error => console.error(error.message));
+      await pipeline(readStream, writeStream)
+    }
 
-  });
+    console.log('Your style.css is ready!');
+
+  } catch (error) {
+    console.error(error.message);
+  }  
+}
+
+createStyleCss();
